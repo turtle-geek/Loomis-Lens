@@ -34,4 +34,7 @@ def normalize_landmarks(face_landmarks):
     if face_width > 0:
         coords = coords / face_width
 
-    return coords.flatten()
+    flattended = coords.flatten()
+
+    # Restrict to first 1404 values
+    return flattended[:1404]
