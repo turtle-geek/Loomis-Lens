@@ -35,7 +35,7 @@ def get_euler_angles(mat_path):
     
     return np.array([pitch, yaw, roll])
 
-def process_dataset(dataset_path, limit=100):
+def process_dataset(dataset_path, limit=5000):
     X_data = []
     y_data = []
     
@@ -74,13 +74,19 @@ def process_dataset(dataset_path, limit=100):
 
 if __name__ == "__main__":
     # Process a small batch to test
-    X, y = process_dataset(dataset_path, limit=50)
+    X, y = process_dataset(dataset_path, limit=5000)
     
-    # Save the processed data
-    # These will be created in your backend/data/ folder
-    np.save("../data/X_train_small.npy", X)
-    np.save("../data/y_train_small.npy", y)
+    save_dir = os.path.join(backend_dir, 'data')
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    x_path = os.path.join(save_dir, "X_train_5k.npy")
+    y_path = os.path.join(save_dir, "y_train_5k.npy")
     
-    print(f"Finished! Saved {len(X)} samples.")
-    print("X shape:", X.shape) # Should be (N, 1404)
-    print("y shape:", y.shape) # Should be (N, 3)
+    np.save(x_path, X)
+    np.save(y_path, y)
+    
+    print(f"\n--- Success! ---")
+    print(f"Files saved successfully in: {save_dir}")
+    print(f"X shape: {X.shape} (Landmarks)")
+    print(f"y shape: {y.shape} (Angles)")
