@@ -21,7 +21,7 @@ detector = vision.FaceLandmarker.create_from_options(options)
 # Set the VideoCapture camera
 cap = cv2.VideoCapture(0)
 
-pose_ids = [1, 33, 263, 61, 291]
+pose_ids = [1, 33, 263, 61, 291, 127, 356, 10, 58, 288]
 
 prev_frame_time = 0
 

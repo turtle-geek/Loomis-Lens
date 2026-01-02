@@ -1,3 +1,11 @@
+# Virtual environments
 .venv/
+
+# Python caching
 __pycache__/
+
+# Mediapipe model
 *.task
+
+# Datasets
+backend/data/
