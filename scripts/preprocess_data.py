@@ -22,18 +22,17 @@ def process_dataset(detector, folder_name, x_file, y_file):
     
     X_data, y_data = [], []
     
-    # RESUME LOGIC: Check for existing data
     if os.path.exists(x_path) and os.path.exists(y_path):
         X_data = list(np.load(x_path))
         y_data = list(np.load(y_path))
-        print(f"Resuming {folder_name}. Loaded {len(X_data)} existing samples.")
+        print(f"Resuming {folder_name}. Loaded {len(X_data)} samples.")
 
     mat_files = glob.glob(os.path.join(dataset_path, "**/*.mat"), recursive=True)
-    start_idx = len(X_data)
+    processed_files_count = len(X_data) // 2 # Accounts for mirrored pairs
     print(f"Processing {folder_name}: {len(mat_files)} total files.")
 
     try:
-        for i in range(start_idx, len(mat_files)):
+        for i in range(processed_files_count, len(mat_files)):
             mat_path = mat_files[i]
             img_path = mat_path.replace('.mat', '.jpg')
             if not os.path.exists(img_path): continue
@@ -47,58 +46,53 @@ def process_dataset(detector, folder_name, x_file, y_file):
             detection_result = detector.detect(mp_image)
 
             if detection_result.face_landmarks:
-                # Normalization now uses the refined Mean Center + Span logic
+                # 1. Original Data
                 clean_landmarks = normalize_landmarks(detection_result.face_landmarks[0], w, h)
                 angles = get_euler_angles(mat_path)
                 X_data.append(clean_landmarks)
                 y_data.append(angles)
+
+                # 2. Mirror Augmentation
+                mirrored_lms = clean_landmarks.reshape(-1, 3).copy()
+                mirrored_lms[:, 0] *= -1 # Flip X axis
+                
+                # Invert Yaw and Roll (y_data: 0=Pitch, 1=Yaw, 2=Roll)
+                mirrored_angles = np.array([angles[0], -angles[1], -angles[2]])
+                
+                X_data.append(mirrored_lms.flatten())
+                y_data.append(mirrored_angles)
             
-            # Periodic Save (Safety Checkpoint every 1000 images)
-            if i > 0 and i % 1000 == 0:
-                print(f"Progress: {i}/{len(mat_files)} - Auto-saving checkpoint...")
+            if i > 0 and i % 500 == 0:
+                print(f"Progress: {i}/{len(mat_files)} (Samples: {len(X_data)}) - Saving...")
                 np.save(x_path, np.array(X_data))
                 np.save(y_path, np.array(y_data))
 
     except KeyboardInterrupt:
-        print("\nPaused by user. Saving current progress...")
+        print("\nProcess interrupted. Saving...")
         np.save(x_path, np.array(X_data))
         np.save(y_path, np.array(y_data))
         sys.exit(0)
 
-    # Final save for the dataset
-    X_final, y_final = np.array(X_data), np.array(y_data)
-    np.save(x_path, X_final)
-    np.save(y_path, y_final)
-    print(f"Finished processing {folder_name}. Saved {len(X_final)} samples.")
-    return X_final, y_final
+    np.save(x_path, np.array(X_data))
+    np.save(y_path, np.array(y_data))
+    return np.array(X_data), np.array(y_data)
 
 if __name__ == "__main__":
-    # --- INTERACTIVE SAFETY PROMPT ---
     existing_files = ["X_train_final.npy", "y_train_final.npy", "X_test_final.npy", "y_test_final.npy"]
-    found_any = any(os.path.exists(os.path.join(data_dir, f)) for f in existing_files)
-
-    if found_any:
-        print("\n" + "!"*40)
-        print("EXISTING DATA DETECTED.")
-        print("Since you are focusing on Z-axis accuracy, you MUST delete old data.")
-        print("!"*40)
-        choice = input("Delete existing data and start fresh? (y/n): ").lower()
-        
-        if choice == 'y':
+    if any(os.path.exists(os.path.join(data_dir, f)) for f in existing_files):
+        print("\n" + "!"*50)
+        print("NEW NORMALIZATION: INTEROCULAR DISTANCE + RIGID ANCHOR")
+        print("Delete old .npy files for best results.")
+        print("!"*50)
+        if input("Delete and start fresh? (y/n): ").lower() == 'y':
             for f in existing_files:
                 p = os.path.join(data_dir, f)
-                if os.path.exists(p): 
-                    os.remove(p)
-                    print(f"Deleted: {f}")
-        else:
-            print("Proceeding with Resume Mode (Warning: Normalization might be inconsistent).")
+                if os.path.exists(p): os.remove(p)
 
-    # Initialize MediaPipe Task
     base_options = python.BaseOptions(model_asset_path=model_path)
-    options = vision.FaceLandmarkerOptions(base_options=base_options, num_faces=1)
+    options = vision.FaceLandmarkerOptions(base_options=base_options, num_faces=1, min_face_presence_confidence=0.5)
     detector = vision.FaceLandmarker.create_from_options(options)
 
-    # Process 300W-LP (Train) and AFLW2000 (Test)
     process_dataset(detector, '300W_LP', "X_train_final.npy", "y_train_final.npy")
     process_dataset(detector, 'AFLW2000', "X_test_final.npy", "y_test_final.npy")
-    print("\n--- Success! Preprocessing Complete ---")
+    print("\n--- Preprocessing Complete ---")

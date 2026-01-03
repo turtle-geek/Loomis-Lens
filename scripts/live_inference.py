@@ -16,7 +16,7 @@ from utils import normalize_landmarks
 
 # --- MODEL INITIALIZATION ---
 model = tf.keras.models.load_model(
-    os.path.join(backend_dir, "head_pose_model.h5"),
+    os.path.join(backend_dir, "head_pose_model_2.h5"),
     compile=False
 )
 
