@@ -7,14 +7,16 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-# Ensure utils.py is accessible
-src_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(src_dir)
+# Get the root directory
+backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if backend_dir not in sys.path:
+    sys.path.append(backend_dir)
 
-from utils import normalize_landmarks, get_euler_angles
+# Import normalization logic from the src package
+from src.utils import normalize_landmarks, get_euler_angles
 
-backend_dir = os.path.abspath(os.path.join(src_dir, '..'))
-model_path = os.path.join(backend_dir, 'face_landmarker.task')
+# Update paths to point to the new folder organization
+model_path = os.path.join(backend_dir, 'models', 'face_landmarker.task')
 data_dir = os.path.join(backend_dir, 'data')
 
 def process_dataset(detector, folder_name, x_file, y_file):
@@ -29,8 +31,9 @@ def process_dataset(detector, folder_name, x_file, y_file):
         y_data = list(np.load(y_path))
         print(f"Resuming {folder_name}. Loaded {len(X_data)} samples.")
 
+    # Search for mat files in the specific dataset subfolder
     mat_files = glob.glob(os.path.join(dataset_path, "**/*.mat"), recursive=True)
-    processed_files_count = len(X_data) // 2 # Accounts for mirrored pairs
+    processed_files_count = len(X_data) // 2 
     print(f"Processing {folder_name}: {len(mat_files)} total files.")
 
     try:
@@ -48,17 +51,17 @@ def process_dataset(detector, folder_name, x_file, y_file):
             detection_result = detector.detect(mp_image)
 
             if detection_result.face_landmarks:
-                # 1. Original Data
+                # Original data
                 clean_landmarks = normalize_landmarks(detection_result.face_landmarks[0], w, h)
                 angles = get_euler_angles(mat_path)
                 X_data.append(clean_landmarks)
                 y_data.append(angles)
 
-                # 2. Mirror Augmentation
+                # Mirror augmentation
                 mirrored_lms = clean_landmarks.reshape(-1, 3).copy()
-                mirrored_lms[:, 0] *= -1 # Flip X axis
+                mirrored_lms[:, 0] *= -1 # Flip x axis
                 
-                # Invert Yaw and Roll (y_data: 0=Pitch, 1=Yaw, 2=Roll)
+                # Invert yaw and roll for mirrored image
                 mirrored_angles = np.array([angles[0], -angles[1], -angles[2]])
                 
                 X_data.append(mirrored_lms.flatten())
@@ -80,21 +83,31 @@ def process_dataset(detector, folder_name, x_file, y_file):
     return np.array(X_data), np.array(y_data)
 
 if __name__ == "__main__":
+    # Ensure data directory exists
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
     existing_files = ["X_train_final.npy", "y_train_final.npy", "X_test_final.npy", "y_test_final.npy"]
     if any(os.path.exists(os.path.join(data_dir, f)) for f in existing_files):
         print("\n" + "!"*50)
-        print("NEW NORMALIZATION: INTEROCULAR DISTANCE + RIGID ANCHOR")
-        print("Delete old .npy files for best results.")
+        print("New normalization detected")
+        print("Delete old npy files for best results")
         print("!"*50)
         if input("Delete and start fresh? (y/n): ").lower() == 'y':
             for f in existing_files:
                 p = os.path.join(data_dir, f)
                 if os.path.exists(p): os.remove(p)
 
+    # Initialize mediapipe from the models folder
     base_options = python.BaseOptions(model_asset_path=model_path)
-    options = vision.FaceLandmarkerOptions(base_options=base_options, num_faces=1, min_face_presence_confidence=0.5)
+    options = vision.FaceLandmarkerOptions(
+        base_options=base_options, 
+        num_faces=1, 
+        min_face_presence_confidence=0.5
+    )
     detector = vision.FaceLandmarker.create_from_options(options)
 
+    # Dataset subfolders should be located in data 300w_lp and data aflw2000
     process_dataset(detector, '300W_LP', "X_train_final.npy", "y_train_final.npy")
     process_dataset(detector, 'AFLW2000', "X_test_final.npy", "y_test_final.npy")
     print("\n--- Preprocessing Complete ---")
