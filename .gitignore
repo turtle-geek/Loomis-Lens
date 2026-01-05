@@ -9,3 +9,6 @@ __pycache__/
 
 # Datasets
 backend/data/
+
+# Tensorboard logs
+backend/logs/

@@ -8,10 +8,12 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 # Ensure utils.py is accessible
-backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(backend_dir)
+src_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(src_dir)
+
 from utils import normalize_landmarks, get_euler_angles
 
+backend_dir = os.path.abspath(os.path.join(src_dir, '..'))
 model_path = os.path.join(backend_dir, 'face_landmarker.task')
 data_dir = os.path.join(backend_dir, 'data')
 

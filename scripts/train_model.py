@@ -174,4 +174,4 @@ history = model.fit(
     verbose=1
 )
 
-model.save(os.path.join(backend_dir, "head_pose_sincos_optimized.h5"))
+model.save(os.path.join(backend_dir, "head_pose_model.h5"))
