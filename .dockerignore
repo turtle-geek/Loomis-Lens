@@ -1,0 +1,13 @@
+# Virtual environments
+.venv/
+
+# Python caching
+__pycache__/
+
+# Folders
+scripts/
+data/
+logs/
+
+# Git
+.git/
