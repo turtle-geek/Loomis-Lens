@@ -3,6 +3,7 @@
 
 # Python caching
 __pycache__/
+*.pyc
 
 # Folders
 scripts/
@@ -11,3 +12,8 @@ logs/
 
 # Git
 .git/
+.gitignore
+
+# Docker specific
+Dockerfile
+.dockerignore

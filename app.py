@@ -7,6 +7,7 @@ import mediapipe as mp
 import time
 from fastapi import FastAPI, UploadFile, File, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from mangum import Mangum
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from math import cos, sin, sqrt
@@ -212,3 +213,5 @@ async def generate_overlay(file: UploadFile = File(...)):
 
 @app.get("/")
 def read_root(): return {"status": "Loomis Lens API Active"}
+
+handler = Mangum(app)

@@ -7,8 +7,12 @@ __pycache__/
 # Mediapipe model
 *.task
 
-# Datasets
-backend/data/
+# Folders
+data/
+logs/
 
-# Tensorboard logs
-backend/logs/
+# Docker/Lambda extras
+.aws/
+.docker/
+node_modules/
+dist/
