@@ -12,6 +12,8 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from math import cos, sin, sqrt
 
+os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
+
 # Path setup
 backend_dir = os.path.dirname(os.path.abspath(__file__))
 if backend_dir not in sys.path:
@@ -35,15 +37,26 @@ app.add_middleware(
 )
 
 # Global model and detector initialization
-model = tf.keras.models.load_model(os.path.join(backend_dir, "models", "head_pose_model.h5"), compile=False)
-model_path = os.path.join(backend_dir, "models", "face_landmarker.task")
-detector = vision.FaceLandmarker.create_from_options(
-    vision.FaceLandmarkerOptions(
-        base_options=python.BaseOptions(model_asset_path=model_path),
-        running_mode=vision.RunningMode.IMAGE,
-        num_faces=1
+try:
+    model = tf.keras.models.load_model(
+        os.path.join(backend_dir, "models", "head_pose_model.h5"), 
+        compile=False
     )
-)
+    
+    model_path = os.path.join(backend_dir, "models", "face_landmarker.task")
+    detector = vision.FaceLandmarker.create_from_options(
+        vision.FaceLandmarkerOptions(
+            base_options=python.BaseOptions(model_asset_path=model_path),
+            running_mode=vision.RunningMode.IMAGE,
+            num_faces=1
+        )
+    )
+    print("SUCCESS: Models loaded correctly.")
+
+except Exception as e:
+    # This prints error in CloudWatch logs
+    print(f"CRITICAL ERROR during initialization: {str(e)}")
+    raise e
 
 def load_loomis_mesh(file_path):
     vertices, faces = [], []
@@ -213,5 +226,9 @@ async def generate_overlay(file: UploadFile = File(...)):
 
 @app.get("/")
 def read_root(): return {"status": "Loomis Lens API Active"}
+
+@app.get("/health")
+def health():
+    return {"status": "awake"}
 
 handler = Mangum(app)

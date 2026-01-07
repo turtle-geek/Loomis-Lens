@@ -1,20 +1,25 @@
-# Use the official AWS Lambda Python base image
-FROM public.ecr.aws/lambda/python:3.10
+FROM public.ecr.aws/lambda/python:3.11
 
-# Install system libraries required for OpenCV and MediaPipe
+# Install ONLY the runtime libraries for OpenCV (no compilers)
 RUN yum update -y && yum install -y \
     mesa-libGL \
     glib2 \
     && yum clean all
 
-# Copy requirements.txt directly to the Lambda task root
+# Upgrade pip
+RUN pip install --upgrade pip
+
+# Copy requirements.txt
 COPY requirements.txt ${LAMBDA_TASK_ROOT}
 
-# Install dependencies into the task root
-RUN pip install --no-cache-dir -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
+# Install dependencies - FORCE BINARY ONLY
+# This prevents it from ever trying to compile NumPy or h5py
+RUN pip install --default-timeout=1000 --no-cache-dir \
+    --only-binary=:all: \
+    -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
-# Copy all application code to the task root
+# Copy all application code
 COPY . ${LAMBDA_TASK_ROOT}
 
-# Set the CMD to point to your Mangum handler in app.py
+# Set the CMD to your handler
 CMD [ "app.handler" ]
