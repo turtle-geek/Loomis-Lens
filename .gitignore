@@ -1,11 +1,14 @@
-# Virtual environments
-.venv/
+# Virtual environments (covers backend/.venv)
+**/.venv/
+venv/
 
-# Python caching
-__pycache__/
+# Python caching (covers all subfolders)
+**/__pycache__/
+*.pyc
 
-# Mediapipe model
+# Mediapipe models & large assets
 *.task
+models/*.h5
 
 # Folders
 data/
@@ -16,3 +19,7 @@ logs/
 .docker/
 node_modules/
 dist/
+
+# OS specific files
+.DS_Store
+Thumbs.db
