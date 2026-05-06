@@ -1,6 +1,5 @@
-# Loomis Lens: Real-Time Head Pose Estimation and Anatomical Overlay Prediction
-
-Loomis Lens is an interactive anatomical tool designed to assist artists in simplifying the breakdown of the human head. My vision was to create a system that integrates real-time facial landmark recognition with head pose estimation to generate a proportionally accurate overlay. By following the Loomis Method, the application creates a 3D guide on top of the subject's face, helping artists visualize anatomical planes and perspective through either a live webcam feed or an uploaded image.
+# Loomis Lens
+An interactive tool that uses real-time facial landmark recognition and head pose estimation to project 3D anatomical overlays. It applies the Loomis Method to live webcam feeds or images to help artists visualize head planes and perspective.
 
 ## Table of Contents
 - [How it Works](#how-it-works)
